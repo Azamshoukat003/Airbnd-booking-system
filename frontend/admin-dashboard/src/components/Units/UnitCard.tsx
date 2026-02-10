@@ -2,7 +2,7 @@ interface UnitCardProps {
   name: string;
   nightlyRate: number;
   status: string;
-  onEdit: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
 }
 
@@ -14,9 +14,11 @@ export default function UnitCard({ name, nightlyRate, status, onEdit, onDelete }
         <p className="text-sm text-black/60">${nightlyRate}/night · {status}</p>
       </div>
       <div className="flex gap-2">
-        <button className="px-3 py-1 rounded-lg border" onClick={onEdit}>
-          Edit
-        </button>
+        {onEdit && (
+          <button className="px-3 py-1 rounded-lg border" onClick={onEdit}>
+            Edit
+          </button>
+        )}
         <button className="px-3 py-1 rounded-lg border text-red-600" onClick={onDelete}>
           Delete
         </button>

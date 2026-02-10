@@ -20,11 +20,28 @@ declare global {
 
 const app = express();
 
+const allowedOrigins = [
+  env.FRONTEND_URL,
+  env.ADMIN_DASHBOARD_URL,
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+];
+
 app.use(helmet());
 app.use(
   cors({
-    origin: [env.FRONTEND_URL, env.ADMIN_DASHBOARD_URL],
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 

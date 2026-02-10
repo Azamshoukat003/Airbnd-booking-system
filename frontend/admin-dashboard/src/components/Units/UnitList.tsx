@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import UnitForm, { UnitFormValues } from './UnitForm';
 import UnitCard from './UnitCard';
 import { api } from '../../utils/api';
 import { supabase } from '../../context/AuthContext';
 
-interface UnitRow {
+export interface UnitRow {
   id: string;
   name: string;
   nightly_rate_usd: number;
@@ -14,12 +13,35 @@ interface UnitRow {
   airbnb_listing_url: string | null;
   airbnb_ical_url: string;
   image_urls: string[] | null;
+  category?: string | null;
+  place_type?: string | null;
+  country?: string | null;
+  street_address?: string | null;
+  floor?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  home_precise?: boolean | null;
+  bedroom_lock?: boolean | null;
+  private_bathroom?: number | null;
+  dedicated_bathroom?: number | null;
+  shared_bathroom?: number | null;
+  bathroom_usage?: string | null;
+  favorites?: string[] | null;
+  amenities?: string[] | null;
+  safety_items?: string[] | null;
+  highlights?: string[] | null;
+  safety_details?: string[] | null;
+  weekday_price?: number | null;
+  weekday_after_tax_price?: number | null;
 }
 
-export default function UnitList() {
+interface UnitListProps {
+  onEditUnit?: (unit: UnitRow) => void;
+}
+
+export default function UnitList({ onEditUnit }: UnitListProps) {
   const [units, setUnits] = useState<UnitRow[]>([]);
-  const [editing, setEditing] = useState<UnitRow | null>(null);
-  const [creating, setCreating] = useState(false);
 
   const fetchUnits = async () => {
     const { data } = await api.get<UnitRow[]>('/admin/units');
@@ -43,22 +65,6 @@ export default function UnitList() {
     };
   }, []);
 
-  const handleSave = async (values: UnitFormValues) => {
-    const payload = {
-      ...values,
-      image_urls: values.image_urls ? values.image_urls.split(',').map((v) => v.trim()) : []
-    };
-
-    if (editing) {
-      await api.put(`/admin/units/${editing.id}`, payload);
-      setEditing(null);
-    } else {
-      await api.post('/admin/units', payload);
-      setCreating(false);
-    }
-    await fetchUnits();
-  };
-
   const handleDelete = async (unitId: string) => {
     await api.delete(`/admin/units/${unitId}`);
     await fetchUnits();
@@ -66,33 +72,6 @@ export default function UnitList() {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Units</h2>
-        <button className="rounded-lg bg-ocean text-white px-4 py-2" onClick={() => setCreating(true)}>
-          Add unit
-        </button>
-      </div>
-
-      {creating && (
-        <div className="card p-4">
-          <h3 className="text-lg font-semibold mb-2">New unit</h3>
-          <UnitForm onSave={handleSave} />
-        </div>
-      )}
-
-      {editing && (
-        <div className="card p-4">
-          <h3 className="text-lg font-semibold mb-2">Edit unit</h3>
-          <UnitForm
-            initial={{
-              ...editing,
-              image_urls: (editing.image_urls ?? []).join(',')
-            }}
-            onSave={handleSave}
-          />
-        </div>
-      )}
-
       <div className="grid gap-3">
         {units.map((unit) => (
           <UnitCard
@@ -100,7 +79,7 @@ export default function UnitList() {
             name={unit.name}
             nightlyRate={unit.nightly_rate_usd}
             status={unit.status}
-            onEdit={() => setEditing(unit)}
+            onEdit={() => onEditUnit?.(unit)}
             onDelete={() => handleDelete(unit.id)}
           />
         ))}
@@ -108,3 +87,4 @@ export default function UnitList() {
     </div>
   );
 }
+

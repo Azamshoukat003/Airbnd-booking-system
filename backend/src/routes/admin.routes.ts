@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 import { requireAuth } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { manualSyncRateLimit } from '../middleware/rate-limit.middleware';
@@ -9,8 +11,14 @@ import { capturePaymentForBooking } from '../services/payment.service';
 import { sendEmail } from '../services/email.service';
 import { syncAllUnits, syncUnit } from '../services/ical-sync.service';
 import { logger } from '../config/logger';
+import { env } from '../config/env';
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 router.use(requireAuth);
 
@@ -139,6 +147,44 @@ router.post('/booking-requests/:id/reject', validate(rejectSchema), async (req, 
   return res.json({ success: true });
 });
 
+
+router.post('/units/photos/upload', upload.array('photos', 10), async (req, res) => {
+  try {
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const uploaded = [] as { publicId: string; secureUrl: string }[];
+    for (const file of files) {
+      const extension = file.originalname.split('.').pop() || 'jpg';
+      const path = `units/${uuidv4()}.${extension}`;
+      const { error } = await supabaseAdmin.storage
+        .from(env.SUPABASE_STORAGE_BUCKET)
+        .upload(path, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+
+      if (error) {
+        logger.error('Failed to upload unit photo', { error: error.message });
+        return res.status(500).json({ error: error.message });
+      }
+
+      const { data } = supabaseAdmin.storage
+        .from(env.SUPABASE_STORAGE_BUCKET)
+        .getPublicUrl(path);
+
+      uploaded.push({ publicId: path, secureUrl: data.publicUrl });
+    }
+
+    return res.json({ data: uploaded });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Upload failed';
+    logger.error('Failed to upload unit photos', { error: message });
+    return res.status(500).json({ error: message });
+  }
+});
 const unitSchema = z.object({
   body: z.object({
     name: z.string().min(2),
@@ -270,3 +316,9 @@ router.get('/payments', async (req, res) => {
 });
 
 export default router;
+
+
+
+
+
+

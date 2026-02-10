@@ -7,6 +7,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_KEY: z.string().min(1),
+  SUPABASE_STORAGE_BUCKET: z.string().min(1),
   BANCARD_API_URL: z.string().url(),
   BANCARD_MERCHANT_ID: z.string().min(1),
   BANCARD_PUBLIC_KEY: z.string().min(1),
@@ -36,3 +37,4 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 export type Env = z.infer<typeof envSchema>;
+
