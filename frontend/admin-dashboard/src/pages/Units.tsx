@@ -43,7 +43,7 @@ export default function Units() {
               <CreationFlow
                 mode="admin-unit"
                 onClose={closeModal}
-                unitDraft={editingUnit}
+                unitDraft={editingUnit as any}
               />
             </CreationProvider>
           </div>
