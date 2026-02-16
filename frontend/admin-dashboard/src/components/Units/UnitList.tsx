@@ -70,21 +70,32 @@ export default function UnitList({ onEditUnit }: UnitListProps) {
     await fetchUnits();
   };
 
+  if (units.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-black/15 bg-white/80 p-10 text-center">
+        <h3 className="text-lg font-semibold text-slate-900">No units yet</h3>
+        <p className="mt-2 text-sm text-slate-600">Create your first unit to start managing listings.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-3">
+    <section className="space-y-4" aria-label="Unit listings">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {units.map((unit) => (
           <UnitCard
             key={unit.id}
             name={unit.name}
+            description={unit.description}
+            imageUrl={unit.image_urls?.[0] ?? null}
             nightlyRate={unit.nightly_rate_usd}
+            maxGuests={unit.max_guests}
             status={unit.status}
             onEdit={() => onEditUnit?.(unit)}
             onDelete={() => handleDelete(unit.id)}
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
-
